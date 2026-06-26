@@ -58,6 +58,24 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/resume', resumeRoutes);
 
+// Hidden route to forcefully seed the database from the browser
+app.get('/api/force-seed', async (req, res) => {
+  try {
+    const db = require('./models');
+    console.log('Force seeding database from browser request...');
+    await db.sequelize.sync({ force: true });
+    await require('./seeders/companyModeSeeder')(db);
+    await require('./seeders/dsaSeeder')(db);
+    await require('./seeders/aptitudeSeeder')(db);
+    await require('./seeders/coreSubjectSeeder')(db);
+    await require('./seeders/hrSeeder')(db);
+    res.send('<h1>✅ Database successfully seeded with 500+ questions!</h1><p>You can now go back and create an account.</p>');
+  } catch (error) {
+    console.error(error);
+    res.send(`<h1>❌ Error seeding database</h1><p>${error.message}</p>`);
+  }
+});
+
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
