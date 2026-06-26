@@ -30,47 +30,14 @@ async function completeOnboarding(req, res, next) {
       answers 
     } = req.body;
 
-    // 1. Evaluate Answers
-    const questionIds = Object.keys(answers || {});
-    const questions = await Question.findAll({ where: { id: questionIds } });
-    
-    let scores = { dsa: 0, aptitude: 0, core_subject: 0, hr: 0 };
-    let counts = { dsa: 0, aptitude: 0, core_subject: 0, hr: 0 };
-
-    for (const q of questions) {
-      const category = q.category;
-      counts[category]++;
-      const userAnswer = answers[q.id];
-
-      if (category === 'hr') {
-        const evalResult = await aiEvaluator.evaluateAnswer(q.title, userAnswer || "", category);
-        if (evalResult.isCorrect) scores[category]++;
-      } else {
-        let isCorrect = false;
-        if (q.options) {
-          isCorrect = String(userAnswer).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();
-        } else {
-          isCorrect = String(userAnswer).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();
-        }
-        if (isCorrect) scores[category]++;
-      }
-    }
-
+    // 1. Bypass Evaluation - Assign Baseline Scores
     const initialScores = {
-      dsa: counts.dsa ? Math.round((scores.dsa / counts.dsa) * 100) : 0,
-      aptitude: counts.aptitude ? Math.round((scores.aptitude / counts.aptitude) * 100) : 0,
-      core_subject: counts.core_subject ? Math.round((scores.core_subject / counts.core_subject) * 100) : 0,
-      hr: counts.hr ? Math.round((scores.hr / counts.hr) * 100) : 0
+      dsa: 50,
+      aptitude: 50,
+      core_subject: 50,
+      hr: 50,
+      overall: 50
     };
-
-    const overallReadiness = Math.round(
-      (initialScores.dsa * 0.4) + 
-      (initialScores.core_subject * 0.25) + 
-      (initialScores.aptitude * 0.2) + 
-      (initialScores.hr * 0.15)
-    );
-
-    initialScores.overall = overallReadiness;
 
     // 2. Update User Profile
     await User.update({

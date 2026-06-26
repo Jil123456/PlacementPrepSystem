@@ -24,19 +24,8 @@ const Onboarding = () => {
     answers: {}
   });
 
-  const [assessmentQuestions, setAssessmentQuestions] = useState([]);
-
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const res = await api.get('/onboarding/assessment');
-        setAssessmentQuestions(res.data.data.questions);
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load assessment');
-      }
-    };
-    fetchQuestions();
+    // Assessment removed to speed up onboarding
   }, []);
 
   const handleCompanyToggle = (company) => {
@@ -119,51 +108,14 @@ const Onboarding = () => {
                 </button>
               ))}
             </div>
-            <button onClick={() => setStep(5)} className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-500 rounded-lg font-bold flex justify-center items-center">Start Assessment <ChevronRight className="ml-2" /></button>
-          </div>
-        );
-      case 5:
-        return (
-          <div className="space-y-6 animate-fadeIn">
-            <h2 className="text-2xl font-bold">Initial Assessment</h2>
-            <p className="text-slate-400">This helps us generate your personalized 60-day roadmap. Do your best!</p>
-            <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-              {assessmentQuestions.map((q, idx) => (
-                <div key={q.id} className="bg-slate-800/50 p-5 rounded-lg border border-slate-700">
-                  <p className="font-medium mb-3">{idx + 1}. {q.title}</p>
-                  {q.description && (
-                    <div className="prose prose-invert max-w-none text-slate-300 text-sm mb-4 bg-slate-900/50 p-4 rounded-md border border-slate-700/50 whitespace-pre-wrap max-h-60 overflow-y-auto custom-scrollbar">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {q.description}
-                      </ReactMarkdown>
-                    </div>
-                  )}
-                  {q.options ? (
-                    <div className="space-y-2">
-                      {(typeof q.options === 'string' ? JSON.parse(q.options) : q.options).map((opt, optIdx) => {
-                        const optKey = typeof opt === 'object' ? opt.value || opt.label || String(optIdx) : opt;
-                        const optVal = typeof opt === 'object' ? opt.value || opt.text || String(opt) : opt;
-                        const optDisplay = typeof opt === 'object' ? (opt.label ? `${opt.label}. ${opt.text || opt.value}` : (opt.text || opt.value)) : opt;
-                        
-                        return (
-                          <label key={optKey} className="flex items-center space-x-3 p-2 rounded hover:bg-slate-700/50 cursor-pointer">
-                            <input type="radio" name={`q-${q.id}`} value={optVal} checked={formData.answers[q.id] === optVal} onChange={() => setFormData(prev => ({...prev, answers: {...prev.answers, [q.id]: optVal}}))} className="form-radio text-primary-500" />
-                            <span>{optDisplay}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <textarea className="w-full p-3 bg-slate-900 rounded border border-slate-700 min-h-[100px]" placeholder="Type your answer here..." value={formData.answers[q.id] || ''} onChange={e => setFormData(prev => ({...prev, answers: {...prev.answers, [q.id]: e.target.value}}))} />
-                  )}
-                </div>
-              ))}
-            </div>
-            <button onClick={submitOnboarding} disabled={loading} className="w-full py-4 bg-primary-600 hover:bg-primary-500 rounded-lg font-bold flex justify-center items-center disabled:opacity-50">
-              {loading ? <><Loader className="animate-spin mr-2" /> Generating AI Roadmap...</> : 'Submit & Generate Roadmap'}
+            <button onClick={submitOnboarding} disabled={loading} className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-500 rounded-lg font-bold flex justify-center items-center">
+              {loading ? <Loader className="animate-spin mr-2" /> : 'Generate Roadmap'} 
+              {!loading && <ChevronRight className="ml-2" />}
             </button>
           </div>
         );
+      default:
+        return null;
     }
   };
 

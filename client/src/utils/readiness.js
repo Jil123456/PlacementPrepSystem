@@ -1,7 +1,7 @@
 export const calculateCompanyReadiness = (user) => {
-  if (!user || !user.initial_assessment_scores) return [];
+  if (!user) return [];
 
-  const scores = user.initial_assessment_scores;
+  const scores = user.initial_assessment_scores || { dsa: 50, core: 50, aptitude: 50, hr: 50 };
   const companies = user.preferred_companies || [];
   const streak = user.streak || 0;
   const bonus = streak > 7 ? 5 : 0;
