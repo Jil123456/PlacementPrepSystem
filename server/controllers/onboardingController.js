@@ -52,60 +52,59 @@ async function completeOnboarding(req, res, next) {
       onboarding_completed: true
     }, { where: { id: userId } });
 
-    // 3. Generate Roadmap via Gemini
-    if (!ai) {
-      console.log("No Gemini API key. Generating dummy personalized roadmap.");
-      const dummyRoadmapDays = [];
-      for (let i = 1; i <= 60; i++) {
-        dummyRoadmapDays.push({ user_id: userId, day_number: i, title: `Day ${i} Basics`, description: 'Generated dummy day', is_revision_day: i % 7 === 0 });
+    // 3. Generate Roadmap instantly (Bypass slow AI generation for speed)
+    const dummyRoadmapDays = [];
+    const focusAreas = ['Arrays & Hashing', 'Two Pointers & Strings', 'Linked Lists & Stacks', 'Trees & Graphs', 'Dynamic Programming', 'System Design & OS', 'DBMS & Networks', 'Mock Interviews'];
+    
+    for (let i = 1; i <= 60; i++) {
+      dummyRoadmapDays.push({ 
+        user_id: userId, 
+        day_number: i, 
+        title: `Day ${i} - ${focusAreas[i % focusAreas.length]}`, 
+        description: 'Master placement concepts and practice problems.', 
+        is_revision_day: i % 7 === 0 
+      });
+    }
+    const createdDays = await RoadmapDay.bulkCreate(dummyRoadmapDays, { returning: true });
+
+    // 4. Assign Tasks to the new Roadmap Days
+    const dsaQs = await Question.findAll({ where: { category: 'dsa' }, order: sequelize.random() });
+    const aptQs = await Question.findAll({ where: { category: 'aptitude' }, order: sequelize.random() });
+    const hrQs = await Question.findAll({ where: { category: 'hr' }, order: sequelize.random() });
+
+    const tasks = [];
+    let dsaIdx = 0, aptIdx = 0, hrIdx = 0;
+
+    for (const day of createdDays) {
+      let orderIndex = 1;
+
+      // 2 DSA Tasks
+      for (let i = 0; i < 2; i++) {
+        const q = dsaQs[dsaIdx % dsaQs.length];
+        if (q) {
+          tasks.push({ roadmap_day_id: day.id, type: 'dsa', title: q.title, description: `Solve optimally.`, question_id: q.id, order_index: orderIndex++, is_required: true });
+          dsaIdx++;
+        }
       }
-      await RoadmapDay.bulkCreate(dummyRoadmapDays);
-      return res.json(successResponse({ scores: initialScores }));
+
+      // 2 Aptitude Tasks
+      for (let i = 0; i < 2; i++) {
+        const q = aptQs[aptIdx % aptQs.length];
+        if (q) {
+          tasks.push({ roadmap_day_id: day.id, type: 'aptitude', title: `Aptitude: ${q.title}`, description: `Solve aptitude.`, question_id: q.id, order_index: orderIndex++, is_required: true });
+          aptIdx++;
+        }
+      }
+
+      // 1 HR Task
+      const hq = hrQs[hrIdx % hrQs.length];
+      if (hq) {
+        tasks.push({ roadmap_day_id: day.id, type: 'hr', title: `HR: ${hq.title}`, description: `Practice HR.`, question_id: hq.id, order_index: orderIndex++, is_required: true });
+        hrIdx++;
+      }
     }
 
-    const prompt = `
-Student profile: [
-  Level: ${dsa_level}, 
-  Daily Time: ${daily_study_time} hours, 
-  Companies: ${(preferred_companies||[]).join(', ')}, 
-  Scores: DSA ${initialScores.dsa}%, Aptitude ${initialScores.aptitude}%, Core ${initialScores.core_subject}%, HR ${initialScores.hr}%
-].
-Generate a 60-day placement preparation roadmap.
-Respond ONLY with a valid JSON object in this exact structure:
-{
-  "days": [
-    {
-      "day": 1,
-      "title": "Arrays Basics",
-      "description": "Master array fundamentals.",
-      "focus_area": "Arrays",
-      "topics_covered": ["arrays", "loops"],
-      "is_revision_day": false
-    }
-  ]
-}
-Make sure to generate exactly 60 days. Day 7, 14, 21, 28, 35, 42, 49, 56 should be revision days.
-    `.trim();
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { responseMimeType: "application/json" }
-    });
-
-    const roadmapData = JSON.parse(response.text);
-
-    const roadmapDaysToInsert = roadmapData.days.slice(0, 60).map(d => ({
-      user_id: userId,
-      day_number: d.day,
-      title: d.title || `Day ${d.day}`,
-      description: d.description || '',
-      focus_area: d.focus_area || '',
-      topics_covered: d.topics_covered || [],
-      is_revision_day: d.is_revision_day || false
-    }));
-
-    await RoadmapDay.bulkCreate(roadmapDaysToInsert);
+    await Task.bulkCreate(tasks);
 
     return res.json(successResponse({ scores: initialScores }));
   } catch (error) {
