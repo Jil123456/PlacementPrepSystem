@@ -1,0 +1,37 @@
+{
+  "name": "placement-prep-server",
+  "version": "1.0.0",
+  "description": "Backend server for Placement Preparation System",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node seeders/index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.8.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.21.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "keywords": [
+    "placement",
+    "preparation",
+    "backend"
+  ],
+  "license": "ISC"
+}

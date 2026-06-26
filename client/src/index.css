@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass {
+    @apply bg-slate-800/50 backdrop-blur border border-slate-700/50;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+  background: #334155; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569; 
+}
+
+/* LeetCode Content Styling */
+.leetcode-content pre {
+  @apply bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm overflow-x-auto my-4 text-slate-300;
+}
+.leetcode-content code {
+  @apply bg-slate-800 px-1.5 py-0.5 rounded text-primary-400 font-mono text-sm;
+}
+.leetcode-content p {
+  @apply mb-4;
+}
+.leetcode-content ul {
+  @apply list-disc list-inside mb-4;
+}
+.leetcode-content strong {
+  @apply text-white font-semibold;
+}
+.leetcode-content em {
+  @apply italic text-slate-400;
+}

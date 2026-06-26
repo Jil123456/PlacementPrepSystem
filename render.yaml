@@ -1,0 +1,27 @@
+services:
+  # Database Service
+  - type: pgr
+    name: placement-prep-db
+    plan: free
+    postgresMajorVersion: 15
+
+  # Node.js Web Service (Monolithic Backend + Frontend)
+  - type: web
+    name: placement-prep-app
+    env: node
+    plan: free
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: placement-prep-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
