@@ -42,7 +42,7 @@ const Onboarding = () => {
     try {
       const res = await api.post('/onboarding/complete', formData);
       toast.success('Onboarding complete! Roadmap generated.');
-      setUser({ ...user, onboarding_completed: true, initial_assessment_scores: res.data.data.scores });
+      setUser({ ...user, onboarding_completed: true, initial_assessment_scores: res.data.data.scores, preferred_companies: formData.preferred_companies });
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to complete onboarding');

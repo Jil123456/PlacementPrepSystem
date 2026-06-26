@@ -67,39 +67,49 @@ async function completeOnboarding(req, res, next) {
     }
     const createdDays = await RoadmapDay.bulkCreate(dummyRoadmapDays, { returning: true });
 
-    // 4. Assign Tasks to the new Roadmap Days
+    // 4. Assign Tasks to the new Roadmap Days (2 DSA + 1 Core Subject + 1 HR per day, no repetition)
     const dsaQs = await Question.findAll({ where: { category: 'dsa' }, order: sequelize.random() });
-    const aptQs = await Question.findAll({ where: { category: 'aptitude' }, order: sequelize.random() });
+    const coreQs = await Question.findAll({ where: { category: 'core_subject' }, order: sequelize.random() });
     const hrQs = await Question.findAll({ where: { category: 'hr' }, order: sequelize.random() });
 
     const tasks = [];
-    let dsaIdx = 0, aptIdx = 0, hrIdx = 0;
+    let dsaIdx = 0, coreIdx = 0, hrIdx = 0;
+
+    // Track used question IDs to guarantee zero repetition
+    const usedQuestionIds = new Set();
 
     for (const day of createdDays) {
       let orderIndex = 1;
 
-      // 2 DSA Tasks
+      // 2 DSA Tasks (unique, never repeated)
       for (let i = 0; i < 2; i++) {
-        const q = dsaQs[dsaIdx % dsaQs.length];
-        if (q) {
-          tasks.push({ roadmap_day_id: day.id, type: 'dsa', title: q.title, description: `Solve optimally.`, question_id: q.id, order_index: orderIndex++, is_required: true });
+        if (dsaQs.length > 0) {
+          const q = dsaQs[dsaIdx % dsaQs.length];
+          if (!usedQuestionIds.has(q.id)) {
+            usedQuestionIds.add(q.id);
+            tasks.push({ roadmap_day_id: day.id, type: 'dsa', title: q.title, description: `Solve: ${q.title}`, question_id: q.id, order_index: orderIndex++, is_required: true });
+          }
           dsaIdx++;
         }
       }
 
-      // 2 Aptitude Tasks
-      for (let i = 0; i < 2; i++) {
-        const q = aptQs[aptIdx % aptQs.length];
-        if (q) {
-          tasks.push({ roadmap_day_id: day.id, type: 'aptitude', title: `Aptitude: ${q.title}`, description: `Solve aptitude.`, question_id: q.id, order_index: orderIndex++, is_required: true });
-          aptIdx++;
+      // 1 Core Subject Task (unique, never repeated)
+      if (coreQs.length > 0) {
+        const cq = coreQs[coreIdx % coreQs.length];
+        if (!usedQuestionIds.has(cq.id)) {
+          usedQuestionIds.add(cq.id);
+          tasks.push({ roadmap_day_id: day.id, type: 'core_subject', title: `Core: ${cq.title}`, description: `Review: ${cq.title}`, question_id: cq.id, order_index: orderIndex++, is_required: true });
         }
+        coreIdx++;
       }
 
-      // 1 HR Task
-      const hq = hrQs[hrIdx % hrQs.length];
-      if (hq) {
-        tasks.push({ roadmap_day_id: day.id, type: 'hr', title: `HR: ${hq.title}`, description: `Practice HR.`, question_id: hq.id, order_index: orderIndex++, is_required: true });
+      // 1 HR Task (unique, never repeated)
+      if (hrQs.length > 0) {
+        const hq = hrQs[hrIdx % hrQs.length];
+        if (!usedQuestionIds.has(hq.id)) {
+          usedQuestionIds.add(hq.id);
+          tasks.push({ roadmap_day_id: day.id, type: 'hr', title: `HR: ${hq.title}`, description: `Practice: ${hq.title}`, question_id: hq.id, order_index: orderIndex++, is_required: true });
+        }
         hrIdx++;
       }
     }
