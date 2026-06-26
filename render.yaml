@@ -1,9 +1,9 @@
-services:
-  # Database Service
-  - type: pgr
-    name: placement-prep-db
+databases:
+  - name: placement-prep-db
     plan: free
     postgresMajorVersion: 15
+
+services:
 
   # Node.js Web Service (Monolithic Backend + Frontend)
   - type: web
