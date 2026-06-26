@@ -22,7 +22,6 @@ async function startServer() {
           console.log('Database is empty! Auto-running seeders in background...');
           try {
             await require('./seeders/companyModeSeeder')(db);
-            await require('./seeders/roadmapSeeder')(db);
             await require('./seeders/dsaSeeder')(db);
             await require('./seeders/aptitudeSeeder')(db);
             await require('./seeders/coreSubjectSeeder')(db);

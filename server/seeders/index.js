@@ -2,7 +2,6 @@ require('dotenv').config({ path: '../.env' });
 const db = require('../models');
 
 const companyModeSeeder = require('./companyModeSeeder');
-const roadmapSeeder = require('./roadmapSeeder');
 const dsaSeeder = require('./dsaSeeder');
 const aptitudeSeeder = require('./aptitudeSeeder');
 const coreSubjectSeeder = require('./coreSubjectSeeder');
@@ -17,7 +16,6 @@ async function seedDatabase() {
 
     console.log('🌱 Starting Seed Process...');
     await companyModeSeeder(db);
-    await roadmapSeeder(db);
     await dsaSeeder(db);
     await aptitudeSeeder(db);
     await coreSubjectSeeder(db);
