@@ -238,24 +238,18 @@ const SolveTask = () => {
           </div>
         </div>
 
-        {/* Links and Actions */}
-        {links.isParsed && (links.article || links.video || links.leetcode) && (
+        {/* Links and Actions - Always show for DSA questions */}
+        {question.category === 'dsa' && (
           <div className="flex flex-wrap gap-3 mb-6">
-            {links.leetcode && (
-              <a href={links.leetcode} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <Code2 className="w-4 h-4" /> Solve on LeetCode
-              </a>
-            )}
-            {links.article && (
-              <a href={links.article} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <BookOpen className="w-4 h-4" /> Read Article
-              </a>
-            )}
-            {links.video && (
-              <a href={links.video} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <Youtube className="w-4 h-4" /> Watch Video
-              </a>
-            )}
+            <a href={links.leetcode || `https://leetcode.com/problemset/?search=${encodeURIComponent(question.title)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <Code2 className="w-4 h-4" /> Solve on LeetCode
+            </a>
+            <a href={`https://www.google.com/search?q=${encodeURIComponent(question.title + ' leetcode solution')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <BookOpen className="w-4 h-4" /> Read Article
+            </a>
+            <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(question.title + ' leetcode solution')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <Youtube className="w-4 h-4" /> Watch Video
+            </a>
           </div>
         )}
 
@@ -408,24 +402,12 @@ const SolveTask = () => {
                     </select>
                   </div>
                   <div className="border border-slate-700 rounded-lg overflow-hidden">
-                    <Editor
-                      height="350px"
-                      language={codeLanguage}
-                      theme="vs-dark"
+                    <textarea
                       value={answer}
-                      onChange={(value) => setAnswer(value || '')}
-                      options={{
-                        fontSize: 14,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        padding: { top: 12, bottom: 12 },
-                        lineNumbers: 'on',
-                        automaticLayout: true,
-                        tabSize: 2,
-                        wordWrap: 'on',
-                        suggestOnTriggerCharacters: true,
-                        quickSuggestions: true,
-                      }}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder={`// Write your ${codeLanguage} solution here...\n\nfunction solve() {\n  \n}`}
+                      className="w-full h-[350px] bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm p-4 resize-none focus:outline-none focus:ring-1 focus:ring-primary-500 leading-relaxed"
+                      spellCheck="false"
                     />
                   </div>
                 </>
