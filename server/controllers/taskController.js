@@ -382,7 +382,7 @@ async function completeTask(req, res, next) {
         isCorrect = evalResult.isCorrect;
         feedback = evalResult.feedback;
         correctAns = evalResult.idealAnswer;
-        explanation = feedback;
+        explanation = evalResult.explanation || feedback;
       } else {
         // Simple string match for DSA / Concepts if they aren't MCQ
         if (answer && task.question.correct_answer !== 'completed') {

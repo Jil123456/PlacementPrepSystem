@@ -23,6 +23,7 @@ const SolveTask = () => {
   const [allTasks, setAllTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   
   // Form state
   const [answer, setAnswer] = useState('');
@@ -68,6 +69,7 @@ const SolveTask = () => {
     setIsCompletedDay(false);
     setLcContent(null);
     setTask(null);
+    setFetchError(null);
     setLinks({ article: null, video: null, leetcode: null, isParsed: false });
     
     const fetchTask = async () => {
@@ -94,11 +96,12 @@ const SolveTask = () => {
             setAllTasks([currentTask]);
           }
         } else {
+          setFetchError("Task not found in response payload.");
           toast.error("Task not found.");
-          navigate('/tasks');
         }
       } catch (error) {
         console.error("Failed to fetch task details:", error);
+        setFetchError(error.response?.data?.message || error.message || "Failed to load task details");
         toast.error("Failed to load task details");
       } finally {
         setLoading(false);
@@ -182,6 +185,23 @@ const SolveTask = () => {
           <h1 className="text-4xl font-bold text-white mb-4">Day Completed!</h1>
           <p className="text-lg text-slate-300 mb-8">
             You've successfully finished all tasks for today. Consistency is the key to success. Keep it up!
+          </p>
+          <Button onClick={() => navigate('/tasks')} variant="primary" className="px-8 py-3 text-lg">
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[calc(100vh-100px)] text-center animate-in fade-in zoom-in duration-500">
+        <div className="bg-slate-900/80 border border-slate-700 p-10 rounded-2xl max-w-lg mx-auto shadow-2xl backdrop-blur-sm">
+          <AlertTriangle className="w-24 h-24 text-rose-500 mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-white mb-4">Task Not Found</h1>
+          <p className="text-lg text-slate-300 mb-8 whitespace-pre-wrap">
+            {fetchError}
           </p>
           <Button onClick={() => navigate('/tasks')} variant="primary" className="px-8 py-3 text-lg">
             Return to Dashboard

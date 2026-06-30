@@ -14,10 +14,10 @@ const SolveQuestion = () => {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  
   const [answer, setAnswer] = useState('');
+  const [isCompleted, setIsCompleted] = useState(false);
   const [startTime] = useState(Date.now());
+  const [resultData, setResultData] = useState(null);
 
   useEffect(() => {
     const fetchQuestion = async () => {
@@ -53,12 +53,14 @@ const SolveQuestion = () => {
       const submitAnswer = answer.trim() || 'completed';
       const response = await questionApi.submitAnswer(id, submitAnswer, timeTakenSeconds);
       
+      setResultData(response.data);
+
       if (response.data?.is_correct || response.success) {
         setIsCompleted(true);
         toast.success(`Correct!`, { icon: '✅' });
-        setTimeout(() => navigate(-1), 1500);
+        setTimeout(() => navigate(-1), 2500); // Give them time to read the success feedback
       } else {
-        toast.error('Incorrect answer. Keep trying!');
+        toast.error('Incorrect answer. Review the feedback below!');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit answer');
@@ -135,6 +137,35 @@ const SolveQuestion = () => {
                 {question.category === 'dsa' ? "Solve this on LeetCode/GFG and paste your code snippet here." : "Write your key takeaways."}
               </p>
               <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Paste code or notes here..." className="w-full h-48 bg-slate-900/80 border border-slate-700 rounded-lg p-4 text-slate-300 font-mono text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 custom-scrollbar resize-none"></textarea>
+            </div>
+          )}
+
+          {resultData && (
+            <div className={`mt-6 mb-6 p-6 rounded-lg border ${resultData.is_correct ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-rose-900/20 border-rose-500/30'}`}>
+              <div className="flex items-start gap-3">
+                {resultData.is_correct ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <AlertTriangle className="w-6 h-6 text-rose-400" />}
+                <div>
+                  <h3 className={`text-lg font-bold mb-2 ${resultData.is_correct ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {resultData.is_correct ? 'AI Evaluation: Pass' : 'AI Evaluation: Needs Improvement'}
+                  </h3>
+                  <p className="text-slate-300 leading-relaxed mb-4">{resultData.feedback || (resultData.is_correct ? 'Correct!' : 'Incorrect answer.')}</p>
+                  
+                  <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
+                    {resultData.correct_answer && (
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Ideal Answer / Concept</p>
+                        <p className="text-slate-200 text-sm whitespace-pre-wrap">{resultData.correct_answer}</p>
+                      </div>
+                    )}
+                    {resultData.explanation && resultData.explanation !== resultData.correct_answer && (
+                      <div className={resultData.correct_answer ? "pt-3 border-t border-slate-800" : ""}>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Explanation</p>
+                        <p className="text-slate-200 text-sm whitespace-pre-wrap">{resultData.explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

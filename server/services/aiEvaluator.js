@@ -56,6 +56,7 @@ Respond ONLY with a valid JSON object in the following format:
 {
   "score": 0-10 (number representing the quality of the answer),
   "feedback": "A concise paragraph (2-3 sentences) explaining what they did well and what they missed.",
+  "explanation": "A detailed explanation of WHY their answer was wrong or what they should focus on to improve. If the answer is complete gibberish, explain the core concept they should have addressed.",
   "passed": true/false (true if the answer is acceptable/passing, false if it fundamentally fails the interview or is logically wrong)
 }
   `.trim();
@@ -76,6 +77,7 @@ Respond ONLY with a valid JSON object in the following format:
       isCorrect: Boolean(result.passed),
       score: result.score || 0,
       feedback: result.feedback || "Evaluated.",
+      explanation: result.explanation || result.feedback || "",
       idealAnswer: idealAnswer
     };
 

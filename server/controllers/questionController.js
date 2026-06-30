@@ -87,7 +87,40 @@ async function submitAnswer(req, res, next) {
       return res.status(404).json(errorResponse('Question not found'));
     }
 
-    const isCorrect = String(answer).trim().toLowerCase() === String(question.correct_answer).trim().toLowerCase();
+    let isCorrect = true;
+    let feedback = "";
+    let correctAns = question.correct_answer;
+    let explanation = question.explanation;
+
+    // Determine if it's an MCQ
+    let isMCQ = false;
+    try {
+      if (question.options) {
+        const parsed = typeof question.options === 'string' ? JSON.parse(question.options) : question.options;
+        if (parsed && (Array.isArray(parsed) || Object.keys(parsed).length > 0)) {
+          isMCQ = true;
+        }
+      }
+    } catch (e) {}
+
+    if (isMCQ) {
+      isCorrect = String(answer).trim().toLowerCase() === String(question.correct_answer).trim().toLowerCase();
+      feedback = isCorrect ? "Correct!" : `Incorrect. The correct answer was ${question.correct_answer}.`;
+    } else if (question.category === 'hr' || question.category === 'aptitude') {
+      const aiEvaluator = require('../services/aiEvaluator');
+      const evalResult = await aiEvaluator.evaluateAnswer(
+        question.title,
+        answer || "(No Answer)",
+        question.category,
+        question.correct_answer
+      );
+      isCorrect = evalResult.isCorrect;
+      feedback = evalResult.feedback;
+      correctAns = evalResult.idealAnswer;
+      explanation = evalResult.explanation || feedback;
+    } else {
+      isCorrect = String(answer).trim().toLowerCase() === String(question.correct_answer).trim().toLowerCase();
+    }
 
     const userAnswer = await UserAnswer.create({
       user_id: userId,
@@ -104,18 +137,26 @@ async function submitAnswer(req, res, next) {
         user_id: userId,
         question_id: question.id,
         user_answer: answer,
-        correct_answer: question.correct_answer,
+        correct_answer: correctAns,
       });
     }
 
     if (isCorrect) {
       await levelService.addXP(userId, 'correct_answer');
+      
+      // Auto-resolve any existing mistake for this question
+      const MistakeModel = require('../models').Mistake;
+      await MistakeModel.update(
+        { is_revised: true, revised_at: new Date() },
+        { where: { user_id: userId, question_id: question.id, is_revised: false } }
+      );
     }
 
     return res.json(successResponse({
       is_correct: isCorrect,
-      correct_answer: question.correct_answer,
-      explanation: question.explanation,
+      correct_answer: correctAns,
+      explanation: explanation,
+      feedback: feedback,
       user_answer: answer,
     }, isCorrect ? 'Correct!' : 'Incorrect'));
   } catch (error) {

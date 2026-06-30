@@ -156,13 +156,22 @@ const Mistakes = () => {
                         </div>
                         
                         {activeTab === 'unrevised' && (
-                          <Button 
-                            variant="outline" 
-                            className="shrink-0 flex items-center gap-2"
-                            onClick={() => handleMarkRevised(mistake.id)}
-                          >
-                            <CheckCircle2 className="w-4 h-4" /> Mark as Understood
-                          </Button>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <Button 
+                              variant="primary" 
+                              className="flex items-center gap-2 justify-center"
+                              onClick={() => window.location.href = `/questions/${mistake.question_id}/solve`}
+                            >
+                              <BrainCircuit className="w-4 h-4" /> Solve Again
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="flex items-center gap-2 justify-center"
+                              onClick={() => handleMarkRevised(mistake.id)}
+                            >
+                              <CheckCircle2 className="w-4 h-4" /> Mark as Understood
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
