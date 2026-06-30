@@ -958,26 +958,26 @@ module.exports = async (db) => {
       time_limit_seconds: 3600
     },
     {
-      title: 'Meeting Rooms',
+      title: 'Insert Interval',
       category: 'dsa',
-      subcategory: 'Sorting Hard',
-      difficulty: 'easy',
-      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/meeting-rooms\n',
+      subcategory: 'Intervals',
+      difficulty: 'medium',
+      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/insert-interval\n',
       correct_answer: 'Apply standard algorithm.',
       explanation: 'Time Complexity: O(N), Space: O(N)',
-      tags: JSON.stringify(['Sorting Hard', ...["meta","google"]]),
-      time_limit_seconds: 1800
+      tags: JSON.stringify(['Intervals', ...["google","meta","amazon","apple"]]),
+      time_limit_seconds: 2400
     },
     {
-      title: 'Meeting Rooms II',
+      title: 'Minimum Number of Arrows to Burst Balloons',
       category: 'dsa',
-      subcategory: 'Sorting Hard',
+      subcategory: 'Intervals',
       difficulty: 'medium',
-      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/meeting-rooms-ii\n',
+      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons\n',
       correct_answer: 'Apply standard algorithm.',
-      explanation: 'Time Complexity: O(N), Space: O(N)',
-      tags: JSON.stringify(['Sorting Hard', ...["amazon","microsoft","meta","google"]]),
-      time_limit_seconds: 2700
+      explanation: 'Time Complexity: O(N log N), Space: O(1)',
+      tags: JSON.stringify(['Intervals', ...["amazon","google","microsoft"]]),
+      time_limit_seconds: 2400
     },
     {
       title: 'Permutations',
@@ -1123,14 +1123,14 @@ module.exports = async (db) => {
       time_limit_seconds: 2700
     },
     {
-      title: 'Alien Dictionary',
+      title: 'Course Schedule II',
       category: 'dsa',
-      subcategory: 'Graphs Hard',
-      difficulty: 'hard',
-      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/alien-dictionary\n',
+      subcategory: 'Tries',
+      difficulty: 'medium',
+      description: 'Loading description from LeetCode...\n\nLeetCode: https://leetcode.com/problems/course-schedule-ii\n',
       correct_answer: 'Apply standard algorithm.',
-      explanation: 'Time Complexity: O(N), Space: O(N)',
-      tags: JSON.stringify(['Graphs Hard', ...["google","meta","amazon"]]),
+      explanation: 'Time Complexity: O(V + E), Space: O(V + E)',
+      tags: JSON.stringify(['Graphs', ...["meta","amazon","google","microsoft"]]),
       time_limit_seconds: 3600
     },
     {
