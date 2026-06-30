@@ -68,7 +68,33 @@ async function completeOnboarding(req, res, next) {
     const createdDays = await RoadmapDay.bulkCreate(dummyRoadmapDays, { returning: true });
 
     // 4. Assign Tasks to the new Roadmap Days (2 DSA + 1 Core Subject + 1 HR per day, no repetition)
-    const dsaQs = await Question.findAll({ where: { category: 'dsa' }, order: sequelize.random() });
+    const { Op } = require('sequelize');
+    const preferredCompanies = req.body.preferred_companies || [];
+    
+    let dsaQs = [];
+    if (preferredCompanies.length > 0) {
+      dsaQs = await Question.findAll({
+        where: {
+          category: 'dsa',
+          tags: {
+            [Op.or]: preferredCompanies.map(c => ({ [Op.like]: `%"${c}"%` }))
+          }
+        },
+        order: sequelize.random()
+      });
+    }
+    
+    if (dsaQs.length < 120) {
+      const existingIds = dsaQs.map(q => q.id);
+      const remainingQs = await Question.findAll({
+        where: {
+          category: 'dsa',
+          id: { [Op.notIn]: existingIds.length > 0 ? existingIds : [0] }
+        },
+        order: sequelize.random()
+      });
+      dsaQs = [...dsaQs, ...remainingQs];
+    }
     const coreQs = await Question.findAll({ where: { category: 'core_subject' }, order: sequelize.random() });
     const hrQs = await Question.findAll({ where: { category: 'hr' }, order: sequelize.random() });
 
