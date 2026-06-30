@@ -528,18 +528,25 @@ async function completeTask(req, res, next) {
 async function getLeetcodeContent(req, res, next) {
   try {
     const { titleSlug } = req.params;
-    const query = `query questionData($titleSlug: String!) { question(titleSlug: $titleSlug) { content } }`;
-    const variables = { titleSlug };
-    const lcRes = await fetch('https://leetcode.com/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+    const https = require('https');
+    
+    https.get(`https://alfa-leetcode-api.onrender.com/select?titleSlug=${titleSlug}`, (response) => {
+      let data = '';
+      response.on('data', chunk => data += chunk);
+      response.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json && json.question) {
+            return res.json(successResponse({ content: json.question }));
+          }
+          return res.status(404).json(errorResponse('Leetcode question not found or is premium'));
+        } catch (e) {
+          return res.status(500).json(errorResponse('Failed to parse LeetCode API response'));
+        }
+      });
+    }).on('error', (e) => {
+      return res.status(500).json(errorResponse('Failed to fetch from LeetCode API'));
     });
-    const json = await lcRes.json();
-    if (json.data && json.data.question && json.data.question.content) {
-      return res.json(successResponse({ content: json.data.question.content }));
-    }
-    return res.status(404).json(errorResponse('Leetcode question not found'));
   } catch (error) {
     next(error);
   }
