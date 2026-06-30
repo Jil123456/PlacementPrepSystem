@@ -68,31 +68,28 @@ async function completeOnboarding(req, res, next) {
     const createdDays = await RoadmapDay.bulkCreate(dummyRoadmapDays, { returning: true });
 
     // 4. Assign Tasks to the new Roadmap Days (2 DSA + 1 Core Subject + 1 HR per day, no repetition)
-    const { Op } = require('sequelize');
     const preferredCompanies = req.body.preferred_companies || [];
+    
+    // Fetch all DSA questions (only ~150 rows, perfectly safe to filter in memory)
+    const allDsaQs = await Question.findAll({ where: { category: 'dsa' }, order: sequelize.random() });
     
     let dsaQs = [];
     if (preferredCompanies.length > 0) {
-      dsaQs = await Question.findAll({
-        where: {
-          category: 'dsa',
-          tags: {
-            [Op.or]: preferredCompanies.map(c => ({ [Op.like]: `%"${c}"%` }))
-          }
-        },
-        order: sequelize.random()
+      dsaQs = allDsaQs.filter(q => {
+        let tags = [];
+        try {
+          tags = typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []);
+        } catch(e) {}
+        
+        // Check if any of the user's preferred companies are in the question's tags
+        return preferredCompanies.some(c => tags.includes(c));
       });
     }
     
+    // We need 120 questions for the 60 days. If the preferred companies didn't yield enough, pad with the rest.
     if (dsaQs.length < 120) {
-      const existingIds = dsaQs.map(q => q.id);
-      const remainingQs = await Question.findAll({
-        where: {
-          category: 'dsa',
-          id: { [Op.notIn]: existingIds.length > 0 ? existingIds : [0] }
-        },
-        order: sequelize.random()
-      });
+      const existingIds = new Set(dsaQs.map(q => q.id));
+      const remainingQs = allDsaQs.filter(q => !existingIds.has(q.id));
       dsaQs = [...dsaQs, ...remainingQs];
     }
     const coreQs = await Question.findAll({ where: { category: 'core_subject' }, order: sequelize.random() });
