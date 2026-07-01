@@ -85,21 +85,30 @@ const Revision = () => {
             ) : (
               <div className="divide-y divide-slate-800/50">
                 {revisions.map(rev => {
-                  const dayInfo = roadmapDays.find(d => d.day_number === rev.target_day_number);
                   return (
                     <div key={rev.id} className={`p-6 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${rev.is_completed ? 'bg-slate-900/50 opacity-60' : 'hover:bg-slate-800/20'}`}>
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <Badge variant="primary">Target: Day {rev.target_day_number}</Badge>
+                          <Badge variant="primary">Day {rev.target_roadmap_day}</Badge>
+                          {rev.question && (
+                            <Badge variant={rev.question.difficulty === 'hard' ? 'danger' : rev.question.difficulty === 'medium' ? 'warning' : 'success'}>
+                              {rev.question.difficulty}
+                            </Badge>
+                          )}
                           <span className="text-sm text-slate-500">Scheduled for today</span>
                         </div>
                         <h3 className={`text-lg font-medium ${rev.is_completed ? 'text-slate-400 line-through' : 'text-white'}`}>
-                          {dayInfo ? dayInfo.focus_area.replace('_', ' ') : `Day ${rev.target_day_number} Topics`}
+                          {rev.question ? rev.question.title : `Day ${rev.target_roadmap_day} Topics`}
                         </h3>
-                        <p className="text-sm text-slate-400 mt-1">Review your notes and mistakes from this day.</p>
+                        <p className="text-sm text-slate-400 mt-1">Review your notes and mistakes for this problem.</p>
                       </div>
                       
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex items-center gap-3">
+                        {rev.question && !rev.is_completed && (
+                          <Button variant="secondary" onClick={() => window.open(`/practice/question/${rev.question.id}`, '_blank')}>
+                            Practice Again
+                          </Button>
+                        )}
                         {rev.is_completed ? (
                           <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 bg-emerald-500/10 rounded-lg">
                             <CheckCircle2 className="w-5 h-5" /> Done
