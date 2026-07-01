@@ -38,7 +38,7 @@ const SolveTask = () => {
 
   const handleRate = async (quality) => {
     try {
-      await revisionApi.rateQuestion(task.question.id, quality);
+      await revisionApi.rateQuestion(task.question.id, quality, 'task');
       setRated(true);
       toast.success('Rating saved! Next review scheduled.');
     } catch (e) {

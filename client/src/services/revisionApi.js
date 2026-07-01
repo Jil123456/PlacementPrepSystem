@@ -7,7 +7,7 @@ export const revisionApi = {
   },
   
   getTodayRevision: async () => {
-    const { data } = await api.get('/revision/today');
+    const { data } = await api.get('/revision/due-today');
     return data;
   },
 
@@ -16,8 +16,8 @@ export const revisionApi = {
     return data;
   },
 
-  rateQuestion: async (question_id, quality) => {
-    const { data } = await api.post('/revision/rate', { question_id, quality });
+  rateQuestion: async (question_id, quality, context) => {
+    const { data } = await api.post('/revision/rate', { question_id, quality, context });
     return data;
   }
 };

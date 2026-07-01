@@ -35,10 +35,10 @@ const Revision = () => {
 
   const handleComplete = async (questionId, quality) => {
     try {
-      const response = await revisionApi.rateQuestion(questionId, quality);
+      const response = await revisionApi.rateQuestion(questionId, quality, 'revision');
       if (response.success) {
         toast.success(`Revision marked as complete! Next date: ${new Date(response.data.revision.next_revision_date).toLocaleDateString()}`);
-        setRevisions(prev => prev.map(r => r.question.id === questionId ? { ...r, is_completed: true } : r));
+        setRevisions(prev => prev.map(r => r.question_id === questionId ? { ...r, is_completed: true } : r));
         setActiveRatingId(null);
       }
     } catch (error) {
@@ -94,22 +94,22 @@ const Revision = () => {
                       <div>
                         <div className="flex items-center gap-3 mb-2">
                           <Badge variant="primary">Day {rev.target_roadmap_day}</Badge>
-                          {rev.question && (
-                            <Badge variant={rev.question.difficulty === 'hard' ? 'danger' : rev.question.difficulty === 'medium' ? 'warning' : 'success'}>
-                              {rev.question.difficulty}
+                          {rev && (
+                            <Badge variant={rev.difficulty === 'hard' ? 'danger' : rev.difficulty === 'medium' ? 'warning' : 'success'}>
+                              {rev.difficulty}
                             </Badge>
                           )}
                           <span className="text-sm text-slate-500">Scheduled for today</span>
                         </div>
                         <h3 className={`text-lg font-medium ${rev.is_completed ? 'text-slate-400 line-through' : 'text-white'}`}>
-                          {rev.question ? rev.question.title : `Day ${rev.target_roadmap_day} Topics`}
+                          {rev.question_id ? rev.title : `Day ${rev.target_roadmap_day} Topics`}
                         </h3>
                         <p className="text-sm text-slate-400 mt-1">Review your notes and mistakes for this problem.</p>
                       </div>
                       
                       <div className="shrink-0 flex items-center gap-3 relative">
-                        {rev.question && !rev.is_completed && (
-                          <Button variant="secondary" onClick={() => window.open(`/practice/question/${rev.question.id}`, '_blank')}>
+                        {rev.question_id && !rev.is_completed && (
+                          <Button variant="secondary" onClick={() => window.open(`/practice/question/${rev.question_id}`, '_blank')}>
                             Practice Again
                           </Button>
                         )}
@@ -120,8 +120,8 @@ const Revision = () => {
                         ) : activeRatingId === rev.id ? (
                           <div className="absolute right-0 top-full mt-2 z-10 w-80 shadow-2xl">
                             <SM2RatingWidget 
-                              onRate={(q) => handleComplete(rev.question.id, q)} 
-                              interval={rev.interval}
+                              onRate={(q) => handleComplete(rev.question_id, q)} 
+                              interval={rev.interval_days}
                               repetitions={rev.repetitions}
                               easinessFactor={rev.easiness_factor}
                             />

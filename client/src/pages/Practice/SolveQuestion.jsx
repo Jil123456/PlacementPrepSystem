@@ -22,7 +22,7 @@ const SolveQuestion = () => {
 
   const handleRate = async (quality) => {
     try {
-      await revisionApi.rateQuestion(id, quality);
+      await revisionApi.rateQuestion(id, quality, 'practice');
       setRated(true);
       toast.success('Rating saved! Next review scheduled.');
     } catch (e) {

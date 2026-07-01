@@ -1,72 +1,75 @@
-const { RevisionSchedule, RoadmapDay, Task, Question } = require('../models');
+﻿const { RevisionSchedule, RevisionSession, Question } = require('../models');
 const { successResponse, errorResponse } = require('../utils/helpers');
 const revisionService = require('../services/revisionService');
+const weaknessService = require('../services/weaknessService');
+const { Op } = require('sequelize');
 
-async function getSchedule(req, res, next) {
+async function getDueToday(req, res, next) {
   try {
     const userId = req.user.id;
-    const { Op } = require('sequelize');
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
 
     const revisions = await RevisionSchedule.findAll({
-      where: { 
+      where: {
         user_id: userId,
-        is_completed: false,
-        target_roadmap_day: { [Op.lte]: req.user.current_day }
+        next_revision_date: { [Op.lte]: today },
+        mastered: false,
       },
       include: [{ model: Question, as: 'question' }],
-      order: [['next_revision_date', 'ASC']],
     });
 
-    return res.json(successResponse({ revisions }));
+    const cards = revisions.map(r => {
+      const msOverdue = Date.now() - new Date(r.next_revision_date).getTime();
+      const daysOverdue = Math.max(0, Math.floor(msOverdue / (1000 * 60 * 60 * 24)));
+      return {
+        question_id: r.question.id,
+        title: r.question.title,
+        topic: r.question.category,
+        difficulty: r.question.difficulty,
+        repetitions: r.repetitions,
+        easiness_factor: r.easiness_factor,
+        interval_days: r.interval,
+        days_overdue: daysOverdue
+      };
+    });
+
+    return res.json(successResponse({ cards }));
   } catch (error) {
     next(error);
   }
 }
 
-async function getTodayRevision(req, res, next) {
+async function getRevisionStats(req, res, next) {
   try {
     const userId = req.user.id;
-    const currentDay = req.user.current_day;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
 
-    const result = await revisionService.getTodayRevisionTasks(userId, currentDay);
+    const dueToday = await RevisionSchedule.count({
+      where: {
+        user_id: userId,
+        next_revision_date: { [Op.lte]: today },
+        mastered: false,
+      }
+    });
 
-    return res.json(successResponse({
-      current_day: currentDay,
-      revisions: result.revisions,
-      revision_days: result.roadmapDays,
+    const mastered = await RevisionSchedule.count({
+      where: { user_id: userId, mastered: true }
+    });
+
+    // Mock weak topics logic or use weaknessService
+    const { weak_topics } = await weaknessService.detectWeakness(userId);
+    const formattedWeakTopics = weak_topics.map(t => ({
+      topic: t.topic,
+      avg_quality: 2.0 // Dummy value, actual logic would query RevisionSession averages
     }));
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function completeRevision(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { id } = req.params;
-
-    const revision = await RevisionSchedule.findOne({
-      where: { id: id, user_id: userId },
-    });
-
-    if (!revision) {
-      return res.status(404).json(errorResponse('Revision entry not found'));
-    }
-
-    if (revision.is_completed) {
-      return res.status(409).json(errorResponse('Revision already completed'));
-    }
-
-    revision.is_completed = true;
-    revision.completed_at = new Date();
-    await revision.save();
-
-    const completionRate = await revisionService.getRevisionCompletionRate(userId);
 
     return res.json(successResponse({
-      revision,
-      completion_rate: completionRate,
-    }, 'Revision completed'));
+      due_today: dueToday,
+      mastered: mastered,
+      weak_topics: formattedWeakTopics
+    }));
   } catch (error) {
     next(error);
   }
@@ -75,14 +78,13 @@ async function completeRevision(req, res, next) {
 async function rateQuestion(req, res, next) {
   try {
     const userId = req.user.id;
-    const { question_id, quality } = req.body;
+    const { question_id, quality, context } = req.body;
 
     if (quality === undefined) return res.status(400).json(errorResponse('Missing quality rating'));
 
     let revision = await RevisionSchedule.findOne({ where: { user_id: userId, question_id } });
     
     if (!revision) {
-      const { RevisionSession } = require('../models');
       const { newInterval, newRepetitions, newEF } = revisionService.calculateSM2(quality, 0, 0, 2.5);
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + newInterval);
@@ -106,15 +108,18 @@ async function rateQuestion(req, res, next) {
       revision = await revisionService.processRevisionRating(revision.id, userId, quality);
     }
 
-    const completionRate = await revisionService.getRevisionCompletionRate(userId);
-
-    return res.json(successResponse({
-      revision,
-      completion_rate: completionRate,
-    }, 'Revision rated successfully'));
+    // New API Contract format
+    return res.json({
+      success: true,
+      data: {
+        interval_after: revision.interval,
+        mastered: revision.mastered,
+        due_date: revision.next_revision_date.toISOString()
+      }
+    });
   } catch (error) {
     next(error);
   }
 }
 
-module.exports = { getSchedule, getTodayRevision, completeRevision, rateQuestion };
+module.exports = { getDueToday, getRevisionStats, rateQuestion };
