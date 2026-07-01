@@ -452,7 +452,30 @@ async function completeTask(req, res, next) {
       });
     }
 
-    // --- SPACED REPETITION LOGIC (Replaced by SM-2 Client side rating) ---
+    // --- SPACED REPETITION LOGIC (Default insertion if they skip SM-2 buttons) ---
+    if (task.question) {
+      let existingRev = await RevisionSchedule.findOne({
+        where: { user_id: user.id, question_id: task.question_id }
+      });
+      
+      if (!existingRev) {
+        // Default: If wrong, 1 day. If correct, 3 days.
+        const defaultInterval = isCorrect ? 3 : 1;
+        const defaultEF = isCorrect ? 2.6 : 2.3;
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + defaultInterval);
+        
+        await RevisionSchedule.create({
+          user_id: user.id,
+          question_id: task.question_id,
+          interval: defaultInterval,
+          repetitions: isCorrect ? 1 : 0,
+          easiness_factor: defaultEF,
+          next_revision_date: nextDate,
+          mastered: false
+        });
+      }
+    }
 
     let progress = await UserProgress.findOne({
       where: { user_id: user.id, roadmap_day_id: task.roadmap_day_id },
