@@ -43,10 +43,10 @@ async function getTodayRevision(req, res, next) {
 async function completeRevision(req, res, next) {
   try {
     const userId = req.user.id;
-    const { revisionId } = req.params;
+    const { id } = req.params;
 
     const revision = await RevisionSchedule.findOne({
-      where: { id: revisionId, user_id: userId },
+      where: { id: id, user_id: userId },
     });
 
     if (!revision) {
