@@ -6,6 +6,8 @@ import questionApi from '../../services/questionApi';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import SM2RatingWidget from '../../components/SM2RatingWidget';
+import revisionApi from '../../services/revisionApi';
 
 const SolveQuestion = () => {
   const { id } = useParams();
@@ -16,6 +18,17 @@ const SolveQuestion = () => {
   const [submitting, setSubmitting] = useState(false);
   const [answer, setAnswer] = useState('');
   const [codeLanguage, setCodeLanguage] = useState('javascript');
+  const [rated, setRated] = useState(false);
+
+  const handleRate = async (quality) => {
+    try {
+      await revisionApi.rateQuestion(id, quality);
+      setRated(true);
+      toast.success('Rating saved! Next review scheduled.');
+    } catch (e) {
+      toast.error('Failed to save rating');
+    }
+  };
   const [isCompleted, setIsCompleted] = useState(false);
   const [startTime] = useState(Date.now());
   const [resultData, setResultData] = useState(null);
@@ -212,9 +225,21 @@ const SolveQuestion = () => {
           )}
 
           <div className="flex justify-end gap-3">
-            <Button type="submit" variant="primary" className="px-8" disabled={submitting || isCompleted}>
-              {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : isCompleted ? <><CheckCircle2 className="w-5 h-5 mr-2" /> Done</> : 'Submit Answer'}
-            </Button>
+            {resultData ? (
+              rated ? (
+                <Button type="button" variant="primary" className="px-8" onClick={() => navigate('/practice')}>
+                  Return to Practice
+                </Button>
+              ) : (
+                <div className="w-full mt-4">
+                  <SM2RatingWidget onRate={handleRate} />
+                </div>
+              )
+            ) : (
+              <Button type="submit" variant="primary" className="px-8" disabled={submitting || isCompleted}>
+                {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : isCompleted ? <><CheckCircle2 className="w-5 h-5 mr-2" /> Done</> : 'Submit Answer'}
+              </Button>
+            )}
           </div>
         </form>
       </Card>

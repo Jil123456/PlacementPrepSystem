@@ -452,64 +452,7 @@ async function completeTask(req, res, next) {
       });
     }
 
-    // --- SPACED REPETITION LOGIC (Day 1, 3, 7, 14, 30) ---
-    if (!isCorrect && task.question) {
-      // Question solved incorrectly. Schedule all 5 revision dates.
-      const intervals = [1, 3, 7, 14, 30];
-      const revisionEntries = intervals.map((days, index) => {
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + days);
-        return {
-          user_id: user.id,
-          question_id: task.question_id,
-          next_revision_date: nextDate,
-          target_roadmap_day: user.current_day + days,
-          revision_stage: index + 1
-        };
-      });
-      await RevisionSchedule.bulkCreate(revisionEntries);
-    } else if (task.type === 'dsa_revision' && isCorrect) {
-      const rev = await RevisionSchedule.findOne({
-        where: { user_id: user.id, question_id: task.question_id, is_completed: false }
-      });
-      if (rev) {
-        rev.is_completed = true;
-        rev.completed_at = new Date();
-        await rev.save();
-
-        const nextDate = new Date();
-        if (!isCorrect) {
-          // Reset to Day 1 (tomorrow) if they got it wrong again
-          nextDate.setDate(nextDate.getDate() + 1);
-          await RevisionSchedule.create({
-            user_id: user.id,
-            question_id: task.question_id,
-            next_revision_date: nextDate,
-            target_roadmap_day: user.current_day + 1,
-            revision_stage: 1
-          });
-        } else {
-          // Schedule next stage
-          let nextStage = rev.revision_stage + 1;
-          let addedDays = 0;
-          if (nextStage === 2) addedDays = 3; // Stage 2: 3 days
-          else if (nextStage === 3) addedDays = 7; // Stage 3: 7 days
-          else if (nextStage === 4) addedDays = 14; // Stage 4: 14 days
-          else if (nextStage === 5) addedDays = 30; // Stage 5: 30 days
-          
-          if (addedDays > 0) {
-            nextDate.setDate(nextDate.getDate() + addedDays);
-            await RevisionSchedule.create({
-              user_id: user.id,
-              question_id: task.question_id,
-              next_revision_date: nextDate,
-              target_roadmap_day: user.current_day + addedDays,
-              revision_stage: nextStage
-            });
-          }
-        }
-      }
-    }
+    // --- SPACED REPETITION LOGIC (Replaced by SM-2 Client side rating) ---
 
     let progress = await UserProgress.findOne({
       where: { user_id: user.id, roadmap_day_id: task.roadmap_day_id },

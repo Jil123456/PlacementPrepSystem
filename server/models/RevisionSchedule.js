@@ -35,6 +35,26 @@ const RevisionSchedule = sequelize.define('RevisionSchedule', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  interval: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  repetitions: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  easiness_factor: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 2.5,
+  },
+  mastered: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   target_roadmap_day: {
     type: DataTypes.INTEGER,
     allowNull: true,

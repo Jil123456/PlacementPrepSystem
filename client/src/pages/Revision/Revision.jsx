@@ -5,10 +5,13 @@ import revisionApi from '../../services/revisionApi';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import SM2RatingWidget from '../../components/SM2RatingWidget';
+import { useAuth } from '../../context/AuthContext';
 
 const Revision = () => {
+  const { user } = useAuth();
   const [revisions, setRevisions] = useState([]);
-  const [roadmapDays, setRoadmapDays] = useState([]);
+  const [activeRatingId, setActiveRatingId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,12 +33,13 @@ const Revision = () => {
     }
   };
 
-  const handleComplete = async (id) => {
+  const handleComplete = async (questionId, quality) => {
     try {
-      const response = await revisionApi.completeRevision(id);
+      const response = await revisionApi.rateQuestion(questionId, quality);
       if (response.success) {
-        toast.success("Revision marked as complete!");
-        setRevisions(prev => prev.map(r => r.id === id ? { ...r, is_completed: true } : r));
+        toast.success(`Revision marked as complete! Next date: ${new Date(response.data.revision.next_revision_date).toLocaleDateString()}`);
+        setRevisions(prev => prev.map(r => r.question.id === questionId ? { ...r, is_completed: true } : r));
+        setActiveRatingId(null);
       }
     } catch (error) {
       toast.error("Failed to complete revision");
@@ -103,7 +107,7 @@ const Revision = () => {
                         <p className="text-sm text-slate-400 mt-1">Review your notes and mistakes for this problem.</p>
                       </div>
                       
-                      <div className="shrink-0 flex items-center gap-3">
+                      <div className="shrink-0 flex items-center gap-3 relative">
                         {rev.question && !rev.is_completed && (
                           <Button variant="secondary" onClick={() => window.open(`/practice/question/${rev.question.id}`, '_blank')}>
                             Practice Again
@@ -113,8 +117,17 @@ const Revision = () => {
                           <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 bg-emerald-500/10 rounded-lg">
                             <CheckCircle2 className="w-5 h-5" /> Done
                           </div>
+                        ) : activeRatingId === rev.id ? (
+                          <div className="absolute right-0 top-full mt-2 z-10 w-80 shadow-2xl">
+                            <SM2RatingWidget 
+                              onRate={(q) => handleComplete(rev.question.id, q)} 
+                              interval={rev.interval}
+                              repetitions={rev.repetitions}
+                              easinessFactor={rev.easiness_factor}
+                            />
+                          </div>
                         ) : (
-                          <Button variant="outline" onClick={() => handleComplete(rev.id)}>
+                          <Button variant="outline" onClick={() => setActiveRatingId(rev.id)}>
                             Mark as Reviewed
                           </Button>
                         )}

@@ -7,5 +7,6 @@ router.use(authenticate);
 router.get('/schedule', revisionController.getSchedule);
 router.get('/today', revisionController.getTodayRevision);
 router.post('/:id/complete', revisionController.completeRevision);
+router.post('/rate', revisionController.rateQuestion);
 
 module.exports = router;

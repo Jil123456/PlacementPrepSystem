@@ -8,6 +8,7 @@ const UserAnswer = require('./UserAnswer');
 const TestResult = require('./TestResult');
 const Mistake = require('./Mistake');
 const RevisionSchedule = require('./RevisionSchedule');
+const RevisionSession = require('./RevisionSession');
 const UserLevel = require('./UserLevel');
 const CompanyMode = require('./CompanyMode');
 const JobApplication = require('./JobApplication');
@@ -56,6 +57,10 @@ Mistake.belongsTo(Question, { foreignKey: 'question_id', as: 'question' });
 RevisionSchedule.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 RevisionSchedule.belongsTo(Question, { foreignKey: 'question_id', as: 'question' });
 
+// ── RevisionSession Associations ──
+RevisionSession.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+RevisionSession.belongsTo(Question, { foreignKey: 'question_id', as: 'question' });
+
 // ── UserLevel Associations ──
 UserLevel.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -76,6 +81,7 @@ module.exports = {
   TestResult,
   Mistake,
   RevisionSchedule,
+  RevisionSession,
   UserLevel,
   CompanyMode,
   JobApplication,

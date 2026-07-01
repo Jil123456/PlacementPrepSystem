@@ -72,4 +72,49 @@ async function completeRevision(req, res, next) {
   }
 }
 
-module.exports = { getSchedule, getTodayRevision, completeRevision };
+async function rateQuestion(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { question_id, quality } = req.body;
+
+    if (quality === undefined) return res.status(400).json(errorResponse('Missing quality rating'));
+
+    let revision = await RevisionSchedule.findOne({ where: { user_id: userId, question_id } });
+    
+    if (!revision) {
+      const { RevisionSession } = require('../models');
+      const { newInterval, newRepetitions, newEF } = revisionService.calculateSM2(quality, 0, 0, 2.5);
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + newInterval);
+
+      revision = await RevisionSchedule.create({
+        user_id: userId,
+        question_id,
+        interval: newInterval,
+        repetitions: newRepetitions,
+        easiness_factor: newEF,
+        next_revision_date: nextDate,
+        mastered: newInterval > 21
+      });
+
+      await RevisionSession.create({
+        user_id: userId, question_id, quality,
+        interval_before: 0, interval_after: newInterval,
+        ef_before: 2.5, ef_after: newEF
+      });
+    } else {
+      revision = await revisionService.processRevisionRating(revision.id, userId, quality);
+    }
+
+    const completionRate = await revisionService.getRevisionCompletionRate(userId);
+
+    return res.json(successResponse({
+      revision,
+      completion_rate: completionRate,
+    }, 'Revision rated successfully'));
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { getSchedule, getTodayRevision, completeRevision, rateQuestion };

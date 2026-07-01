@@ -13,6 +13,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import SM2RatingWidget from '../../components/SM2RatingWidget';
+import revisionApi from '../../services/revisionApi';
 
 const SolveTask = () => {
   const { id } = useParams();
@@ -32,6 +34,17 @@ const SolveTask = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [codeLanguage, setCodeLanguage] = useState('javascript');
   const [isCompletedDay, setIsCompletedDay] = useState(false);
+  const [rated, setRated] = useState(false);
+
+  const handleRate = async (quality) => {
+    try {
+      await revisionApi.rateQuestion(task.question.id, quality);
+      setRated(true);
+      toast.success('Rating saved! Next review scheduled.');
+    } catch (e) {
+      toast.error('Failed to save rating');
+    }
+  };
 
   // LeetCode Integration
   const [lcContent, setLcContent] = useState(null);
@@ -493,21 +506,35 @@ const SolveTask = () => {
 
           <div className="flex justify-end gap-3 mt-6">
             {resultData ? (
-                <Button onClick={() => {
-                  const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
-                  const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
-                  if (nextTask) {
-                    navigate(`/tasks/${nextTask.id}/solve`);
-                  } else {
-                    setIsCompletedDay(true);
-                  }
-                }} variant="primary" className="px-8">
+              rated ? (
+                <Button 
+                  type="button" 
+                  variant="primary" 
+                  className="px-8"
+                  onClick={() => {
+                    const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
+                    const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
+                    if (nextTask) {
+                      setResultData(null);
+                      setAnswer('');
+                      setRated(false);
+                      navigate(`/tasks/${nextTask.id}/solve`);
+                    } else {
+                      setIsCompletedDay(true);
+                    }
+                  }}
+                >
                   {(() => {
                     const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
                     const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
                     return nextTask ? 'Continue to Next Task' : 'Finish Daily Task';
                   })()}
                 </Button>
+              ) : (
+                <div className="w-full mt-4">
+                  <SM2RatingWidget onRate={handleRate} />
+                </div>
+              )
             ) : (
                 <Button 
                 type="submit" 
