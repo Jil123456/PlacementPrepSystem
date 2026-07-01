@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import revisionApi from '../../services/revisionApi';
+import submissionApi from '../../services/submissionApi';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -35,9 +36,9 @@ const Revision = () => {
 
   const handleComplete = async (questionId, quality) => {
     try {
-      const response = await revisionApi.rateQuestion(questionId, quality, 'revision');
-      if (response.success) {
-        toast.success(`Revision marked as complete! Next date: ${new Date(response.data.revision.next_revision_date).toLocaleDateString()}`);
+      const response = await submissionApi.submitResult(questionId, true, quality);
+      if (response.success || response.data) {
+        toast.success(`Revision marked as complete! Next date: ${new Date(response.data.next_due_date || response.next_due_date).toLocaleDateString()}`);
         setRevisions(prev => prev.map(r => r.question_id === questionId ? { ...r, is_completed: true } : r));
         setActiveRatingId(null);
       }

@@ -14,7 +14,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SM2RatingWidget from '../../components/SM2RatingWidget';
-import revisionApi from '../../services/revisionApi';
+import submissionApi from '../../services/submissionApi';
 
 const SolveTask = () => {
   const { id } = useParams();
@@ -38,7 +38,7 @@ const SolveTask = () => {
 
   const handleRate = async (quality) => {
     try {
-      await revisionApi.rateQuestion(task.question.id, quality, 'task');
+      await submissionApi.submitResult(task.question.id, true, quality);
       setRated(true);
       toast.success('Rating saved! Next review scheduled.');
     } catch (e) {
@@ -163,6 +163,17 @@ const SolveTask = () => {
         toast.success('Correct! Well done!', { icon: '🎉', duration: 4000 });
       } else {
         toast.error('Needs Improvement. Review the explanation.', { icon: '🤖' });
+        
+        try {
+          const subRes = await submissionApi.submitResult(task.question.id, false, 0);
+          if (subRes.success) {
+            setResultData(prev => ({
+              ...prev,
+              hint_shown: subRes.data.hint_shown,
+              solution_shown: subRes.data.solution_shown
+            }));
+          }
+        } catch (e) { console.error('Failed to update mistake log', e); }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit task');
@@ -466,6 +477,8 @@ const SolveTask = () => {
                 <div>
                   <h3 className={`text-lg font-bold mb-2 ${resultData.is_correct ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {resultData.is_correct ? 'AI Evaluation: Pass' : 'AI Evaluation: Needs Improvement'}
+                    {!resultData.is_correct && resultData.hint_shown && <Badge variant="warning" className="ml-3">Hint Unlocked</Badge>}
+                    {!resultData.is_correct && resultData.solution_shown && <Badge variant="danger" className="ml-3">Approach Unlocked</Badge>}
                   </h3>
                   <p className="text-slate-300 leading-relaxed mb-4">{resultData.feedback}</p>
                   
@@ -506,33 +519,49 @@ const SolveTask = () => {
 
           <div className="flex justify-end gap-3 mt-6">
             {resultData ? (
-              rated ? (
-                <Button 
-                  type="button" 
-                  variant="primary" 
-                  className="px-8"
-                  onClick={() => {
-                    const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
-                    const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
-                    if (nextTask) {
+              resultData.is_correct ? (
+                rated ? (
+                  <Button 
+                    type="button" 
+                    variant="primary" 
+                    className="px-8"
+                    onClick={() => {
+                      const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
+                      const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
+                      if (nextTask) {
+                        setResultData(null);
+                        setAnswer('');
+                        setRated(false);
+                        navigate(`/tasks/${nextTask.id}/solve`);
+                      } else {
+                        setIsCompletedDay(true);
+                      }
+                    }}
+                  >
+                    {(() => {
+                      const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
+                      const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
+                      return nextTask ? 'Continue to Next Task' : 'Finish Daily Task';
+                    })()}
+                  </Button>
+                ) : (
+                  <div className="w-full mt-4">
+                    <SM2RatingWidget onRate={handleRate} />
+                  </div>
+                )
+              ) : (
+                <div className="w-full flex justify-end gap-3 mt-4">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="px-8"
+                    onClick={() => {
                       setResultData(null);
                       setAnswer('');
-                      setRated(false);
-                      navigate(`/tasks/${nextTask.id}/solve`);
-                    } else {
-                      setIsCompletedDay(true);
-                    }
-                  }}
-                >
-                  {(() => {
-                    const currentIndex = allTasks.findIndex(t => t.id === parseInt(id));
-                    const nextTask = allTasks.slice(currentIndex + 1).find(t => !t.is_completed);
-                    return nextTask ? 'Continue to Next Task' : 'Finish Daily Task';
-                  })()}
-                </Button>
-              ) : (
-                <div className="w-full mt-4">
-                  <SM2RatingWidget onRate={handleRate} />
+                    }}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               )
             ) : (

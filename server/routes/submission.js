@@ -1,9 +1,9 @@
 ﻿const express = require('express');
 const router = express.Router();
-const mistakesController = require('../controllers/mistakesController');
+const submissionController = require('../controllers/submissionController');
 const { authenticate } = require('../middleware/auth');
 
 router.use(authenticate);
-router.get('/pending', mistakesController.getImprovementQueue);
+router.post('/result', submissionController.handleResult);
 
 module.exports = router;

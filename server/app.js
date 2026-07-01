@@ -9,7 +9,9 @@ const errorHandler = require('./middleware/errorHandler');
 // Route imports
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
-const questionRoutes = require('./routes/questions');
+const questionsRouter = require('./routes/questions');
+const submissionRouter = require('./routes/submission');
+const mistakesRouter = require('./routes/mistakes');
 const progressRoutes = require('./routes/progress');
 const testRoutes = require('./routes/tests');
 const revisionRoutes = require('./routes/revision');
@@ -45,7 +47,9 @@ app.use('/api/', limiter);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/questions', questionRoutes);
+app.use('/api/questions', questionsRouter);
+app.use('/api/submission', submissionRouter);
+app.use('/api/mistakes', mistakesRouter);
 app.use('/api/progress', progressRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/revision', revisionRoutes);

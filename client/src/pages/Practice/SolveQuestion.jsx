@@ -7,7 +7,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SM2RatingWidget from '../../components/SM2RatingWidget';
-import revisionApi from '../../services/revisionApi';
+import submissionApi from '../../services/submissionApi';
 
 const SolveQuestion = () => {
   const { id } = useParams();
@@ -22,7 +22,7 @@ const SolveQuestion = () => {
 
   const handleRate = async (quality) => {
     try {
-      await revisionApi.rateQuestion(id, quality, 'practice');
+      await submissionApi.submitResult(id, true, quality);
       setRated(true);
       toast.success('Rating saved! Next review scheduled.');
     } catch (e) {
@@ -72,9 +72,19 @@ const SolveQuestion = () => {
       if (response.data?.is_correct || response.success) {
         setIsCompleted(true);
         toast.success(`Correct!`, { icon: '✅' });
-        setTimeout(() => navigate(-1), 2500); // Give them time to read the success feedback
+        // Removed navigate(-1) so user can see SM2 rating widget
       } else {
         toast.error('Incorrect answer. Review the feedback below!');
+        try {
+          const subRes = await submissionApi.submitResult(id, false, 0);
+          if (subRes.success) {
+            setResultData(prev => ({
+              ...prev,
+              hint_shown: subRes.data.hint_shown,
+              solution_shown: subRes.data.solution_shown
+            }));
+          }
+        } catch (e) { console.error('Failed to log mistake', e); }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit answer');
@@ -186,6 +196,8 @@ const SolveQuestion = () => {
                 <div>
                   <h3 className={`text-lg font-bold mb-2 ${resultData.is_correct ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {resultData.is_correct ? 'AI Evaluation: Pass' : 'AI Evaluation: Needs Improvement'}
+                    {!resultData.is_correct && resultData.hint_shown && <Badge variant="warning" className="ml-3">Hint Unlocked</Badge>}
+                    {!resultData.is_correct && resultData.solution_shown && <Badge variant="danger" className="ml-3">Approach Unlocked</Badge>}
                   </h3>
                   <p className="text-slate-300 leading-relaxed mb-4">{resultData.feedback || (resultData.is_correct ? 'Correct!' : 'Incorrect answer.')}</p>
                   
@@ -226,13 +238,29 @@ const SolveQuestion = () => {
 
           <div className="flex justify-end gap-3">
             {resultData ? (
-              rated ? (
-                <Button type="button" variant="primary" className="px-8" onClick={() => navigate('/practice')}>
-                  Return to Practice
-                </Button>
+              resultData.is_correct ? (
+                rated ? (
+                  <Button type="button" variant="primary" className="px-8" onClick={() => navigate('/practice')}>
+                    Return to Practice
+                  </Button>
+                ) : (
+                  <div className="w-full mt-4">
+                    <SM2RatingWidget onRate={handleRate} />
+                  </div>
+                )
               ) : (
-                <div className="w-full mt-4">
-                  <SM2RatingWidget onRate={handleRate} />
+                <div className="w-full flex justify-end gap-3 mt-4">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="px-8"
+                    onClick={() => {
+                      setResultData(null);
+                      setAnswer('');
+                    }}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               )
             ) : (

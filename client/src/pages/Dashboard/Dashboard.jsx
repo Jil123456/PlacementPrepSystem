@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import taskApi from '../../services/taskApi';
 import progressApi from '../../services/progressApi';
+import mistakesApi from '../../services/mistakesApi';
 import { calculateCompanyReadiness } from '../../utils/readiness';
 
 const Dashboard = () => {
@@ -26,15 +27,17 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [weaknessData, setWeaknessData] = useState(null);
+  const [pendingMistakes, setPendingMistakes] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   useEffect(() => {
     const fetchTasksAndDashboard = async () => {
       try {
-        const [taskRes, dashRes, weakRes] = await Promise.all([
+        const [taskRes, dashRes, weakRes, mistakesRes] = await Promise.all([
           taskApi.getTodayTasks(),
           progressApi.getDashboard(),
-          progressApi.getWeakness()
+          progressApi.getWeakness(),
+          mistakesApi.getPendingMistakes()
         ]);
         if (taskRes.success) {
           setTasks(taskRes.data.tasks || []);
@@ -47,6 +50,9 @@ const Dashboard = () => {
         }
         if (weakRes.success) {
           setWeaknessData(weakRes.data);
+        }
+        if (mistakesRes && mistakesRes.success) {
+          setPendingMistakes(mistakesRes.data.mistakes || []);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -69,6 +75,14 @@ const Dashboard = () => {
   let greeting = 'Good Evening';
   if (hour < 12) greeting = 'Good Morning';
   else if (hour < 18) greeting = 'Good Afternoon';
+
+  // Calculate Weak Areas
+  const mistakeCountsByTopic = pendingMistakes.reduce((acc, mistake) => {
+    const topic = mistake.question?.subcategory || mistake.question?.category || 'Unknown';
+    acc[topic] = (acc[topic] || 0) + 1;
+    return acc;
+  }, {});
+  const criticalWeakAreas = Object.entries(mistakeCountsByTopic).filter(([_, count]) => count > 5).map(([topic]) => topic);
 
   // Rotating Quotes
   const quotes = [
@@ -275,7 +289,7 @@ const Dashboard = () => {
         {/* Side Panel */}
         <div className="space-y-6">
           {/* Weak Areas Alert */}
-          {weaknessData?.weak_topics && weaknessData.weak_topics.length > 0 ? (
+          {criticalWeakAreas.length > 0 ? (
             <Card variant="danger" className="p-5 border-rose-500/30">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-rose-500/20 rounded-lg shrink-0">
@@ -284,14 +298,11 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-semibold text-rose-200">Weakness Detected</h3>
                   <p className="text-sm text-rose-300/90 mt-1 mb-2">
-                    Accuracy is below 50% in: <span className="font-bold text-rose-100">{weaknessData.weak_topics.map(t => t.subcategory).join(', ')}</span>
+                    You have &gt; 5 pending mistakes in: <span className="font-bold text-rose-100">{criticalWeakAreas.join(', ')}</span>
                   </p>
                   <p className="text-xs text-rose-300/70 mb-3">
-                    Recommendation: Extra practice questions have been automatically added to your daily tasks.
+                    Recommendation: Review your Improvement Queue.
                   </p>
-                  <button onClick={() => window.location.href='/tasks'} className="text-xs font-medium px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-md transition-colors">
-                    Start Practice
-                  </button>
                 </div>
               </div>
             </Card>
@@ -308,6 +319,32 @@ const Dashboard = () => {
               </div>
             </Card>
           )}
+
+          {/* Improvement Queue */}
+          <Card className="p-5">
+            <h3 className="font-semibold text-white mb-4 flex items-center">
+              <Target className="w-4 h-4 mr-2 text-primary-400" />
+              Improvement Queue
+            </h3>
+            <div className="space-y-3">
+              {pendingMistakes.length === 0 ? (
+                <div className="text-sm text-slate-400 text-center w-full">No pending mistakes to improve!</div>
+              ) : (
+                pendingMistakes.slice(0, 3).map(mistake => (
+                  <Link 
+                    to={`/practice/question/${mistake.question_id}`}
+                    key={mistake.id}
+                    className="flex justify-between items-center p-3 rounded bg-slate-900/50 hover:bg-slate-800 border border-slate-700/50 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-200 line-clamp-1">{mistake.question?.title}</p>
+                      <p className="text-xs text-rose-400 mt-1">Attempts: {mistake.attempt_count}</p>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </Card>
 
           {/* Upcoming Revisions */}
           <Card className="p-5">

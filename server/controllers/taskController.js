@@ -442,15 +442,7 @@ async function completeTask(req, res, next) {
       answered_at: new Date(),
     });
 
-    if (!isCorrect && task.question) {
-      await Mistake.create({
-        user_id: user.id,
-        question_id: task.question_id,
-        user_answer: answer || "(Empty)",
-        correct_answer: correctAns || "(Not provided)",
-        category: task.type,
-      });
-    }
+    
 
     // --- SPACED REPETITION LOGIC (Default insertion if they skip SM-2 buttons) ---
     if (task.question) {
