@@ -138,12 +138,12 @@ const SolveTask = () => {
     }
   }, [task, links.isParsed]);
 
-  const submitToServer = async (submitAnswer) => {
+  const submitToServer = async (submitAnswer, language = 'javascript') => {
     setSubmitting(true);
     const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
 
     try {
-      const response = await taskApi.submitTask(id, submitAnswer, timeTakenSeconds);
+      const response = await taskApi.submitTask(id, submitAnswer, timeTakenSeconds, language);
       setResultData(response.data);
       
       if (response.data?.is_correct) {
@@ -165,7 +165,7 @@ const SolveTask = () => {
       return;
     }
     const submitAnswer = answer.trim() || 'completed';
-    await submitToServer(submitAnswer);
+    await submitToServer(submitAnswer, task?.question?.category === 'dsa' ? codeLanguage : undefined);
   };
 
   if (loading) {
@@ -467,6 +467,22 @@ const SolveTask = () => {
                       <div className={resultData.correct_answer ? "pt-3 border-t border-slate-800" : ""}>
                         <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Explanation</p>
                         <p className="text-slate-200 text-sm whitespace-pre-wrap">{resultData.explanation}</p>
+                      </div>
+                    )}
+                    {(resultData.measured_time_complexity || resultData.measured_space_complexity) && (
+                      <div className="pt-3 border-t border-slate-800">
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Empirical Execution Metrics</p>
+                        <div className="flex gap-4">
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Time: <strong className="text-amber-400">{resultData.measured_time_complexity || 'Unknown'}</strong>
+                          </div>
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Space: <strong className="text-blue-400">{resultData.measured_space_complexity || 'Unknown'}</strong>
+                          </div>
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Optimal: <strong className={resultData.is_optimal ? 'text-emerald-400' : 'text-rose-400'}>{resultData.is_optimal ? 'Yes' : 'No'}</strong>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

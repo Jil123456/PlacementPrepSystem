@@ -21,10 +21,11 @@ export const questionApi = {
     return data;
   },
 
-  submitAnswer: async (id, answer, timeTakenSeconds) => {
+  submitAnswer: async (id, answer, timeTakenSeconds, language = 'javascript') => {
     const { data } = await api.post(`/questions/${id}/answer`, {
       answer,
-      time_taken_seconds: timeTakenSeconds
+      time_taken_seconds: timeTakenSeconds,
+      language
     });
     return data;
   }

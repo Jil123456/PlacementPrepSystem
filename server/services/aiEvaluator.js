@@ -92,6 +92,84 @@ Respond ONLY with a valid JSON object in the following format:
   }
 }
 
+/**
+ * Evaluates the time and space complexity of source code by combining
+ * empirical execution data with AI static analysis.
+ */
+async function evaluateCodeComplexity(questionTitle, code, language, empiricalTime, empiricalSpace, idealTime, idealSpace) {
+  if (!ai) {
+    return {
+      is_optimal: false,
+      feedback: "AI Evaluation disabled. Configure GEMINI_API_KEY.",
+      ai_explanation: "Fallback mode.",
+      final_time: empiricalTime,
+      final_space: empiricalSpace
+    };
+  }
+
+  const prompt = `
+You are an expert technical interviewer evaluating a candidate's code submission for Data Structures and Algorithms.
+
+Question: "${questionTitle}"
+Language: ${language}
+Ideal Time Complexity: ${idealTime || 'O(N)'}
+Ideal Space Complexity: ${idealSpace || 'O(1)'}
+
+Candidate's Code:
+"""
+${code}
+"""
+
+Empirical Curve Fitting Results (Execution Sandbox):
+- Measured Time Complexity: ${empiricalTime}
+- Measured Space Complexity: ${empiricalSpace}
+
+Your Task:
+1. Review the candidate's code to determine the actual theoretical Time and Space complexity.
+2. Cross-check your theoretical analysis with the Empirical Curve Fitting Results. If the empirical results are wild (e.g. O(1) for a clearly O(N^2) loop due to small inputs), OVERRIDE the empirical guess with the true theoretical complexity.
+3. Compare the final complexity with the Ideal Complexity. Is the solution optimal?
+4. Write a plain language explanation of WHY the code has this complexity (e.g., "The nested for-loop over the array gives O(N^2) time. No extra space is allocated so space is O(1).").
+
+Respond ONLY with a valid JSON object in the following format:
+{
+  "final_time_complexity": "O(...)",
+  "final_space_complexity": "O(...)",
+  "is_optimal": true/false,
+  "explanation": "Plain language explanation here...",
+  "feedback": "Concise summary of optimality (e.g., 'Optimal time but could save space' or 'Correct but too slow (O(N^2))')"
+}
+  `.trim();
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    const result = JSON.parse(response.text);
+    return {
+      is_optimal: Boolean(result.is_optimal),
+      feedback: result.feedback || "Evaluated.",
+      ai_explanation: result.explanation || "",
+      final_time: result.final_time_complexity || empiricalTime,
+      final_space: result.final_space_complexity || empiricalSpace
+    };
+  } catch (error) {
+    console.error("AI Complexity Evaluation Error:", error);
+    return {
+      is_optimal: false,
+      feedback: "AI Evaluation Failed.",
+      ai_explanation: error.message,
+      final_time: empiricalTime,
+      final_space: empiricalSpace
+    };
+  }
+}
+
 module.exports = {
-  evaluateAnswer
+  evaluateAnswer,
+  evaluateCodeComplexity
 };

@@ -373,6 +373,7 @@ async function completeTask(req, res, next) {
         feedback = isCorrect ? "Correct!" : `Incorrect. The correct answer was ${task.question.correct_answer}.`;
       } else if (task.type === 'hr' || task.type === 'aptitude') {
         // AI Evaluation for Subjective Answers
+        const aiEvaluator = require('../services/aiEvaluator');
         const evalResult = await aiEvaluator.evaluateAnswer(
           task.question.title,
           answer || "(No Answer)",
@@ -383,8 +384,42 @@ async function completeTask(req, res, next) {
         feedback = evalResult.feedback;
         correctAns = evalResult.idealAnswer;
         explanation = evalResult.explanation || feedback;
+      } else if (task.type === 'dsa' || task.type === 'dsa_revision') {
+        const { language = 'javascript' } = req.body;
+        const codeRunner = require('../services/codeRunnerService');
+        const complexityFitter = require('../services/complexityFitter');
+        const aiEvaluator = require('../services/aiEvaluator');
+
+        // Default to true for now since it's hard to verify functional correctness without test cases
+        isCorrect = true; 
+
+        const empiricalMetrics = await codeRunner.runComplexityTests(answer, language);
+        var measuredTime = "Unknown";
+        var measuredSpace = "Unknown";
+        var isOptimal = false;
+
+        if (empiricalMetrics) {
+          measuredTime = complexityFitter.analyzeComplexity(empiricalMetrics, 'time_ms');
+          measuredSpace = complexityFitter.analyzeComplexity(empiricalMetrics, 'memory_kb');
+        }
+
+        const evalResult = await aiEvaluator.evaluateCodeComplexity(
+          task.question.title,
+          answer,
+          language,
+          measuredTime,
+          measuredSpace,
+          task.question.ideal_time_complexity || 'O(N)',
+          task.question.ideal_space_complexity || 'O(1)'
+        );
+
+        feedback = evalResult.feedback;
+        explanation = evalResult.ai_explanation;
+        isOptimal = evalResult.is_optimal;
+        measuredTime = evalResult.final_time;
+        measuredSpace = evalResult.final_space;
       } else {
-        // Simple string match for DSA / Concepts if they aren't MCQ
+        // Simple string match for concepts if they aren't MCQ
         if (answer && task.question.correct_answer !== 'completed') {
             isCorrect = String(answer).trim().toLowerCase() === String(task.question.correct_answer).trim().toLowerCase();
         }
@@ -396,6 +431,12 @@ async function completeTask(req, res, next) {
       question_id: task.question_id,
       task_id: task.id,
       user_answer: answer || "completed",
+      code: (task.type === 'dsa' || task.type === 'dsa_revision') ? answer : null,
+      language: (task.type === 'dsa' || task.type === 'dsa_revision') ? (req.body.language || 'javascript') : null,
+      measured_time_complexity: (task.type === 'dsa' || task.type === 'dsa_revision') ? (typeof measuredTime !== 'undefined' ? measuredTime : null) : null,
+      measured_space_complexity: (task.type === 'dsa' || task.type === 'dsa_revision') ? (typeof measuredSpace !== 'undefined' ? measuredSpace : null) : null,
+      ai_explanation: explanation || null,
+      is_optimal: typeof isOptimal !== 'undefined' ? isOptimal : null,
       is_correct: isCorrect,
       time_taken_seconds: time_taken_seconds || null,
       answered_at: new Date(),

@@ -16,10 +16,11 @@ export const taskApi = {
     return data;
   },
 
-  submitTask: async (taskId, answer, timeTakenSeconds = 0) => {
+  submitTask: async (taskId, answer, timeTakenSeconds = 0, language = 'javascript') => {
     const { data } = await api.post(`/tasks/${taskId}/complete`, {
       answer,
-      time_taken_seconds: timeTakenSeconds
+      time_taken_seconds: timeTakenSeconds,
+      language
     });
     return data;
   },

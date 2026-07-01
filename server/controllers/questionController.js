@@ -118,6 +118,40 @@ async function submitAnswer(req, res, next) {
       feedback = evalResult.feedback;
       correctAns = evalResult.idealAnswer;
       explanation = evalResult.explanation || feedback;
+    } else if (question.category === 'dsa') {
+      const { language = 'javascript' } = req.body;
+      const codeRunner = require('../services/codeRunnerService');
+      const complexityFitter = require('../services/complexityFitter');
+      const aiEvaluator = require('../services/aiEvaluator');
+
+      // Default to true for now since it's hard to verify functional correctness without test cases
+      isCorrect = true; 
+
+      const empiricalMetrics = await codeRunner.runComplexityTests(answer, language);
+      let measuredTime = "Unknown";
+      let measuredSpace = "Unknown";
+      let isOptimal = false;
+
+      if (empiricalMetrics) {
+        measuredTime = complexityFitter.analyzeComplexity(empiricalMetrics, 'time_ms');
+        measuredSpace = complexityFitter.analyzeComplexity(empiricalMetrics, 'memory_kb');
+      }
+
+      const evalResult = await aiEvaluator.evaluateCodeComplexity(
+        question.title,
+        answer,
+        language,
+        measuredTime,
+        measuredSpace,
+        question.ideal_time_complexity || 'O(N)',
+        question.ideal_space_complexity || 'O(1)'
+      );
+
+      feedback = evalResult.feedback;
+      explanation = evalResult.ai_explanation;
+      isOptimal = evalResult.is_optimal;
+      measuredTime = evalResult.final_time;
+      measuredSpace = evalResult.final_space;
     } else {
       isCorrect = String(answer).trim().toLowerCase() === String(question.correct_answer).trim().toLowerCase();
     }
@@ -127,6 +161,12 @@ async function submitAnswer(req, res, next) {
       question_id: question.id,
       task_id: null,
       user_answer: answer,
+      code: question.category === 'dsa' ? answer : null,
+      language: question.category === 'dsa' ? (req.body.language || 'javascript') : null,
+      measured_time_complexity: question.category === 'dsa' ? (typeof measuredTime !== 'undefined' ? measuredTime : null) : null,
+      measured_space_complexity: question.category === 'dsa' ? (typeof measuredSpace !== 'undefined' ? measuredSpace : null) : null,
+      ai_explanation: explanation || null,
+      is_optimal: typeof isOptimal !== 'undefined' ? isOptimal : null,
       is_correct: isCorrect,
       time_taken_seconds: time_taken_seconds || null,
       answered_at: new Date(),

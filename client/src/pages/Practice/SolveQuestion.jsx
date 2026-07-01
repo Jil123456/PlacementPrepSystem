@@ -15,6 +15,7 @@ const SolveQuestion = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [answer, setAnswer] = useState('');
+  const [codeLanguage, setCodeLanguage] = useState('javascript');
   const [isCompleted, setIsCompleted] = useState(false);
   const [startTime] = useState(Date.now());
   const [resultData, setResultData] = useState(null);
@@ -51,7 +52,7 @@ const SolveQuestion = () => {
 
     try {
       const submitAnswer = answer.trim() || 'completed';
-      const response = await questionApi.submitAnswer(id, submitAnswer, timeTakenSeconds);
+      const response = await questionApi.submitAnswer(id, submitAnswer, timeTakenSeconds, codeLanguage);
       
       setResultData(response.data);
 
@@ -131,12 +132,37 @@ const SolveQuestion = () => {
             <div className="space-y-3 mb-6">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 {question.category === 'dsa' ? <Code2 className="w-5 h-5 text-primary-400" /> : <BrainCircuit className="w-5 h-5 text-indigo-400" />}
-                Your Solution / Notes
+                {question.category === 'dsa' ? 'Write Your Code' : 'Your Solution / Notes'}
               </h3>
-              <p className="text-sm text-slate-400 mb-2">
-                {question.category === 'dsa' ? "Solve this on LeetCode/GFG and paste your code snippet here." : "Write your key takeaways."}
-              </p>
-              <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Paste code or notes here..." className="w-full h-48 bg-slate-900/80 border border-slate-700 rounded-lg p-4 text-slate-300 font-mono text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 custom-scrollbar resize-none"></textarea>
+              {question.category === 'dsa' ? (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="text-sm text-slate-400">Language:</label>
+                    <select 
+                      value={codeLanguage} 
+                      onChange={(e) => setCodeLanguage(e.target.value)}
+                      className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary-500"
+                    >
+                      <option value="javascript">JavaScript</option>
+                      <option value="python">Python</option>
+                    </select>
+                  </div>
+                  <div className="border border-slate-700 rounded-lg overflow-hidden">
+                    <textarea
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder={`// Write your ${codeLanguage} solution here...\n\nfunction solve() {\n  \n}`}
+                      className="w-full h-[350px] bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm p-4 resize-none focus:outline-none focus:ring-1 focus:ring-primary-500 leading-relaxed"
+                      spellCheck="false"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-400 mb-2">Write down your key takeaways.</p>
+                  <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Write your notes here..." className="w-full h-48 bg-slate-900/80 border border-slate-700 rounded-lg p-4 text-slate-300 font-mono text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 custom-scrollbar resize-none"></textarea>
+                </>
+              )}
             </div>
           )}
 
@@ -161,6 +187,22 @@ const SolveQuestion = () => {
                       <div className={resultData.correct_answer ? "pt-3 border-t border-slate-800" : ""}>
                         <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Explanation</p>
                         <p className="text-slate-200 text-sm whitespace-pre-wrap">{resultData.explanation}</p>
+                      </div>
+                    )}
+                    {(resultData.measured_time_complexity || resultData.measured_space_complexity) && (
+                      <div className="pt-3 border-t border-slate-800">
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Empirical Execution Metrics</p>
+                        <div className="flex gap-4">
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Time: <strong className="text-amber-400">{resultData.measured_time_complexity || 'Unknown'}</strong>
+                          </div>
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Space: <strong className="text-blue-400">{resultData.measured_space_complexity || 'Unknown'}</strong>
+                          </div>
+                          <div className="bg-slate-800/50 px-3 py-1.5 rounded text-sm text-slate-300">
+                            Optimal: <strong className={resultData.is_optimal ? 'text-emerald-400' : 'text-rose-400'}>{resultData.is_optimal ? 'Yes' : 'No'}</strong>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
