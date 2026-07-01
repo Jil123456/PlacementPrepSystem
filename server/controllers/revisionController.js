@@ -11,7 +11,7 @@ async function getSchedule(req, res, next) {
       where: { 
         user_id: userId,
         is_completed: false,
-        next_revision_date: { [Op.lte]: new Date() }
+        target_roadmap_day: { [Op.lte]: req.user.current_day }
       },
       include: [{ model: Question, as: 'question' }],
       order: [['next_revision_date', 'ASC']],

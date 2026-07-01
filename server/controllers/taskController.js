@@ -463,6 +463,7 @@ async function completeTask(req, res, next) {
           user_id: user.id,
           question_id: task.question_id,
           next_revision_date: nextDate,
+          target_roadmap_day: user.current_day + days,
           revision_stage: index + 1
         };
       });
@@ -484,21 +485,25 @@ async function completeTask(req, res, next) {
             user_id: user.id,
             question_id: task.question_id,
             next_revision_date: nextDate,
+            target_roadmap_day: user.current_day + 1,
             revision_stage: 1
           });
         } else {
           // Schedule next stage
           let nextStage = rev.revision_stage + 1;
-          if (nextStage === 2) nextDate.setDate(nextDate.getDate() + 3); // Stage 2: 3 days
-          else if (nextStage === 3) nextDate.setDate(nextDate.getDate() + 7); // Stage 3: 7 days
-          else if (nextStage === 4) nextDate.setDate(nextDate.getDate() + 14); // Stage 4: 14 days
-          else if (nextStage === 5) nextDate.setDate(nextDate.getDate() + 30); // Stage 5: 30 days
+          let addedDays = 0;
+          if (nextStage === 2) addedDays = 3; // Stage 2: 3 days
+          else if (nextStage === 3) addedDays = 7; // Stage 3: 7 days
+          else if (nextStage === 4) addedDays = 14; // Stage 4: 14 days
+          else if (nextStage === 5) addedDays = 30; // Stage 5: 30 days
           
-          if (nextStage <= 5) {
+          if (addedDays > 0) {
+            nextDate.setDate(nextDate.getDate() + addedDays);
             await RevisionSchedule.create({
               user_id: user.id,
               question_id: task.question_id,
               next_revision_date: nextDate,
+              target_roadmap_day: user.current_day + addedDays,
               revision_stage: nextStage
             });
           }

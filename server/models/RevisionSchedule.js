@@ -35,6 +35,10 @@ const RevisionSchedule = sequelize.define('RevisionSchedule', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  target_roadmap_day: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   tableName: 'revision_schedules',
   timestamps: true,

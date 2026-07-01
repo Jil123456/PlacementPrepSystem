@@ -6,7 +6,7 @@ async function getTodayRevisionTasks(userId, currentDay) {
   const revisions = await RevisionSchedule.findAll({
     where: {
       user_id: userId,
-      next_revision_date: { [Op.lte]: new Date() },
+      target_roadmap_day: { [Op.lte]: currentDay },
       is_completed: false,
     },
     include: [{ model: Question, as: 'question' }],
